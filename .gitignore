@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.log
+# Account snapshot / credentials — NEVER commit
+.kiro_gateway_state.json
+*_state.json
+*accounts*.json
+.aws/
