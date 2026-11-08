@@ -35,6 +35,7 @@ router like 9Router) can use Kiro's models through a local HTTP endpoint.
 ## Install & run
 
 ```bash
+# ganti <you> dengan username GitHub kamu (clone repo ini: ikyyss)
 git clone https://github.com/<you>/kiro-gateway.git
 cd kiro-gateway
 python kiro_gateway.py
