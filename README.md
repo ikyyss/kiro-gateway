@@ -21,6 +21,7 @@ router like 9Router) can use Kiro's models through a local HTTP endpoint.
 | File | Purpose |
 |---|---|
 | `kiro_gateway.py` | The gateway. Python stdlib only. |
+| `seed_state.py` | Build the account state file from local Kiro login tokens. |
 | `kiro_supervisor.bat` | Windows auto-restart supervisor (optional). |
 | `SKILL.md` | Protocol notes / gotchas. |
 | `README.md` | This install guide. |
@@ -44,18 +45,50 @@ Default port **20132** (override with env `PORT`).
 
 ### Getting accounts
 
-The gateway needs Kiro accounts to talk to the runtime. The snapshot file is
+The gateway needs Kiro accounts to talk to the runtime. The state file is
 **your** credentials — it is never committed and lives **outside** the repo:
 
 - Default path: `~/.kiro_gateway_state.json`
 - Override with env `KIRO_STATE_PATH`.
 
-To seed it: log into each Kiro account once in the Kiro desktop app, then copy
-the resulting token snapshot to the state path. The gateway watches the file
-and auto-rotates accounts. If the file is missing/empty, the gateway serves
-`503 no accounts` on chat requests but stays up (health still works).
+**Step 1 — log in to Kiro.** Open the Kiro desktop app and sign in to each
+account you want the gateway to use. Each login writes an auth snapshot to
+`~/.aws/sso/cache/kiro-auth-token.json`.
 
-> **Security:** the snapshot contains refresh tokens. Keep it private. It is
+**Step 2 — seed the state file.** Copy that snapshot into the gateway state
+file (idempotent — safe to re-run; won't duplicate an account):
+
+```bash
+python seed_state.py
+```
+
+This produces `~/.kiro_gateway_state.json` containing one entry per account.
+The gateway picks accounts from this file round-robin and refreshes tokens
+against Kiro automatically.
+
+**Manual fallback** (if the app cache path differs): create
+`~/.kiro_gateway_state.json` as a JSON array, one object per account:
+
+```json
+[
+  {
+    "name": "akun1",
+    "accessToken": "<accessToken>",
+    "refreshToken": "<refreshToken>",
+    "expiresAt": "0",
+    "profileArn": "<profileArn>",
+    "clientId": null,
+    "clientSecret": null,
+    "authMethod": "sso",
+    "social": false
+  }
+]
+```
+
+If the file is missing/empty, the gateway serves `503 no accounts` on chat
+requests but stays up (health still works).
+
+> **Security:** the state file contains refresh tokens. Keep it private. It is
 > gitignored and outside the repo by default.
 
 ## Endpoints
